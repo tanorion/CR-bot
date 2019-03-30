@@ -191,11 +191,11 @@ class Player
                 }
                 else if (queenStartHp < 61)
                 {
-                    skip = 2;// state.Sites.Count(x => Math.Abs(x.y - startY) < 400) - 8;
+                    skip = 1;// state.Sites.Count(x => Math.Abs(x.y - startY) < 400) - 8;
                 }
                 else if (queenStartHp < 80)
                 {
-                    skip = 3;// state.Sites.Count(x => Math.Abs(x.y - startY) < 400) - 8;
+                    skip = 2;// state.Sites.Count(x => Math.Abs(x.y - startY) < 400) - 8;
                 }
                 if (skip > state.Sites.Count(x => Math.Abs(x.y - startY) < 400))
                 {
@@ -244,16 +244,11 @@ class Player
 
             Console.Error.WriteLine("enemy knights: " + state.Units.Count(x => x.owner == 1 && x.type == 0));
 
-            if (state.Units.Count(x => x.owner == 1 && x.type == 0) > 2 && state.Queen.health < 70 || state.EnemyQueen.health < state.Queen.health)
-            {
-                goodTowers = state.Sites.Where(x => x.structureType != 1 && x.siteId != aimBarrack && Math.Abs(x.x - startX) < Math.Abs(state.Queen.x - startX) && (x.owner != 0) && !InEnemyTowerRange(state, x)).OrderBy(x => x.dist);
-                if (goodTowers.Count() == 0)
-                {
+            if (state.Units.Count(x => x.owner == 1 && x.type == 0) > 2 && state.Queen.health < 80 || state.EnemyQueen.health < state.Queen.health)
+            {  
                     SmallDefend(state);
                     Train(barracks);
                     return;
-                }
-
             }
             if (goodTowers.Count() < 3 || movedToEnd)
             {
@@ -281,7 +276,7 @@ class Player
                 return;
             }
 
-            if (mines.Count() < 6 && state.Units.Any(x => x.owner == 1 && x.type == 0&&DistansTo(x.x,x.y,state.Queen.x,state.Queen.y)<300))
+            if (mines.Count() < 6 && !state.Units.Any(x => x.owner == 1 && x.type == 0&&DistansTo(x.x,x.y,state.Queen.x,state.Queen.y)<300))
             {
                 var goodMines = goodTowers.Where(x => x.gold != 0);
                 foreach (var t in goodMines)
