@@ -98,7 +98,12 @@ class Player
                 int param1 = int.Parse(inputs[5]);
                 int param2 = int.Parse(inputs[6]);
 
-                sites[i].gold = sitegold;
+                if (sitegold != -1)
+                {
+                    sites[i].gold = sitegold;
+                }
+               
+                
                 sites[i].maxMineSize = maxMineSize;
                 sites[i].owner = owner;
                 sites[i].structureType = structureType;
@@ -276,7 +281,7 @@ class Player
                 return;
             }
 
-            if (mines.Count() < 6 && state.Units.Count(x => x.owner == 1 && x.type == 0) == 0)
+            if (mines.Count() < 6 && state.Units.Any(x => x.owner == 1 && x.type == 0&&DistansTo(x.x,x.y,state.Queen.x,state.Queen.y)<300))
             {
                 var goodMines = goodTowers.Where(x => x.gold != 0);
                 foreach (var t in goodMines)
@@ -300,10 +305,17 @@ class Player
                 }
             }
 
+            if (state.TouchedSite != -1 && state.Sites[state.TouchedSite].param1 < 700 &&
+                state.Sites[state.TouchedSite].owner == 0 && state.Sites[state.TouchedSite].structureType == 1)
+            {
+                Build(state, state.Sites[state.TouchedSite], "TOWER");
+                Train(barracks);
+                return; 
+            }
 
             Build(state, goodTowers.First(), "TOWER");
             Train(barracks);
-            return; ;
+            return; 
         }
 
         private void Train(IEnumerable<Site> barracks = null)
@@ -635,6 +647,10 @@ class Player
 }
 public class Site
 {
+    public Site()
+    {
+        gold = -1;
+    }
     public int siteId { get; set; }
     public int x { get; set; }
     public int y { get; set; }
