@@ -430,10 +430,10 @@ class Player
             if (!MyTurf.Any())
             {
                 MyTurf = state.Sites.Where(x => x.distXstart < 1000).ToList();
-                Towers = MyTurf.OrderByDescending(x => x.distXstart).Take(3).ToList();
-                Barracks= MyTurf.OrderByDescending(x => x.distXstart).Skip(3).Take(2).ToList();
+                Towers = MyTurf.OrderBy(x => DistansTo(x.x,x.y,700,500)).Take(3).ToList();
+                Barracks= MyTurf.Where(x=> Towers.All(y=>x.siteId!=y.siteId)).OrderByDescending(x => x.distXstart).Take(2).ToList();
                 Barracks.Add(MyTurf.OrderBy(x=>x.dist).First());
-                Mines = MyTurf.OrderByDescending(x => x.distXstart).Skip(6).ToList();
+                Mines = MyTurf.Where(x => Towers.All(y => x.siteId != y.siteId) && Barracks.All(y => x.siteId != y.siteId)).ToList();
                 foreach (var site in MyTurf)
                 {
                     Console.Error.WriteLine("myturf: "+site.siteId);
@@ -454,7 +454,7 @@ class Player
 
             if (MyTurf.All(x => x.structureType == -1))
             {
-                Build(state,MyTurf.OrderBy(x => x.dist).First(),"BARRACKS-ARCHER");
+                Build(state,MyTurf.OrderBy(x => x.dist).First(),"BARRACKS-KNIGHT");
                 TrainStructured(state);
                 return;
                 
@@ -511,10 +511,10 @@ class Player
 
         private void TrainStructured(State state)
         {
-            var archer = Barracks.FirstOrDefault(x => x.structureType == 1 && x.param2 == 1);
-            if (archer != null && !state.Units.Any(x => x.owner == 0 && x.type == 2)&&state.Units.Count(x=>x.owner==1&&x.type==0)>2){
+            var knight = Barracks.FirstOrDefault(x => x.structureType == 1 && x.param2 == 2);
+            if (knight != null && !state.Units.Any(x => x.owner == 0 && x.type == 2)&&state.Units.Count(x=>x.owner==1&&x.type==0)>2){
             
-                Train(new List<Site>() { archer });
+                Train(new List<Site>() { knight });
                 return;
                 }
             if (state.Gold > 200)
