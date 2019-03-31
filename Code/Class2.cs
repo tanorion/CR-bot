@@ -39,6 +39,7 @@ class Player
         public List<Site> Barracks =new List<Site>();
         public List<Site> MyTurf =new List<Site>();
         public List<Site> Mines = new List<Site>();
+     
         public void Game()
         {
 
@@ -66,8 +67,8 @@ class Player
             {
                 var state = GetState(sites);
 
-                StructuredPlay(state);
-                //Rush(state);
+                //StructuredPlay(state);
+                Rush(state);
                 //var b = this.DoBuild(state.Gold, state.TouchedSite, state.Sites, state.Units);
                 //var t = DoTrain(state.Gold, state.TouchedSite, state.Sites, state.Units);
                 if (state.TouchedSite != -1 && sites[state.TouchedSite].structureType != -1)
@@ -217,7 +218,7 @@ class Player
             var barracks = state.Sites.Where(x => x.owner == 0 && x.structureType == 2);
             var mines = state.Sites.Where(x => x.owner == 0 && x.structureType == 0);
 
-            if (state.EnemyQueen.health < state.Queen.health && state.Sites.Any(x => x.owner == 1 && x.structureType == 2))
+            if (state.EnemyQueen.health < state.Queen.health &&state.Turn>170&& state.Sites.Any(x => x.owner == 1 && x.structureType == 2))
             {
                 if (state.Units.Any(x => x.owner == 1 && x.type == 0))
                 {
@@ -250,7 +251,7 @@ class Player
 
             Console.Error.WriteLine("enemy knights: " + state.Units.Count(x => x.owner == 1 && x.type == 0));
 
-            if (state.Units.Count(x => x.owner == 1 && x.type == 0) > 2 && state.Queen.health < 80 || state.EnemyQueen.health < state.Queen.health)
+            if (state.Units.Count(x => x.owner == 1 && x.type == 0) > 2 && state.Queen.health < 80 || state.EnemyQueen.health < state.Queen.health&& state.Turn>170)
             {  
                     SmallDefend(state);
                     Train(barracks);
@@ -282,7 +283,7 @@ class Player
                 return;
             }
 
-            if (mines.Count() < 6 && !state.Units.Any(x => x.owner == 1 && x.type == 0&&DistansTo(x.x,x.y,state.Queen.x,state.Queen.y)<300))
+            if (mines.Count() < 6||!state.Sites.Any(x=>x.owner==1&&x.structureType==2) && !state.Units.Any(x => x.owner == 1 && x.type == 0&&DistansTo(x.x,x.y,state.Queen.x,state.Queen.y)<300))
             {
                 var goodMines = goodTowers.Where(x => x.gold != 0);
                 foreach (var t in goodMines)
@@ -623,7 +624,7 @@ class Player
                 }
             }
 
-            Train(Barracks);
+            Train(Barracks.Where(x=>x.structureType==2));
         }
     }
 
