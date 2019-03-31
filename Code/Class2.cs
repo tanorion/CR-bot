@@ -429,70 +429,63 @@ class Player
         {
             if (!MyTurf.Any())
             {
-                MyTurf = state.Sites.Where(x => x.distXstart < 1000).ToList();
-                Towers = MyTurf.OrderBy(x => DistansTo(x.x,x.y,700,500)).Take(3).ToList();
-                Barracks= MyTurf.Where(x=> Towers.All(y=>x.siteId!=y.siteId)).OrderByDescending(x => x.distXstart).Take(2).ToList();
-                Barracks.Add(MyTurf.Where(x=>Math.Abs(startY-x.y)<300).OrderBy(x=>x.distXstart).Skip(1).First());
-                Mines = MyTurf.Where(x => Towers.All(y => x.siteId != y.siteId) && Barracks.All(y => x.siteId != y.siteId)).ToList();
-                foreach (var site in MyTurf)
-                {
-                    Console.Error.WriteLine("myturf: "+site.siteId);
-                }
-                foreach (var tower in Towers)
-                {
-                    Console.Error.WriteLine("turftower: "+tower.siteId);
-                }
-                foreach (var site in Barracks)
-                {
-                    Console.Error.WriteLine("turfbarracks: " + site.siteId);
-                }
-                foreach (var site in Mines)
-                {
-                    Console.Error.WriteLine("turfMines: " + site.siteId);
-                }
+                SetMyTurf(state, 1000);
             }
 
-            if (MyTurf.All(x => x.structureType == -1))
+            if (MyTurf.Any(x => x.owner == 1 && x.structureType == 1))
             {
-                Build(state, Barracks.OrderBy(x => x.dist).First(),"BARRACKS-KNIGHT");
-                TrainStructured(state);
-                return;
-                
+                SetMyTurf(state, 1200);
             }
+
+
             if (state.Units.Any(x =>
                 x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 300))
             {
 
                 if (Mines.Count(x => x.structureType == 1) > 2)
                 {
-                    Build(state, MyTurf.Where(x => x.structureType == 1).OrderBy(x => x.dist).First(), "MINE");
+                    Console.Error.WriteLine("upgrade new tower because of close knights");
+                    Build(state, MyTurf.Where(x => x.structureType == 1).OrderBy(x => x.dist).First(), "TOWER");
                     TrainStructured(state);
                     return;
                 }
+                Console.Error.WriteLine("build new tower because of close knights");
                 Build(state, Mines.Where(x => x.structureType != 1).OrderBy(x => x.dist).First(), "TOWER");
                 TrainStructured(state);
                 return;
             }
+
             if (state.TouchedSite != -1)
             {
                 
-                if (state.TouchedSite != -1 && state.Sites[state.TouchedSite].structureType == -1 && Towers.All(x => x.siteId != state.TouchedSite)&& Barracks.All(x => x.siteId != state.TouchedSite))
+                if (state.TouchedSite != -1 && (state.Sites[state.TouchedSite].structureType == -1||(state.Sites[state.TouchedSite].maxMineSize > state.Sites[state.TouchedSite].param1 && state.Sites[state.TouchedSite].gold > 0)) && Towers.All(x => x.siteId != state.TouchedSite)&& Barracks.All(x => x.siteId != state.TouchedSite))
                 {
+                    Console.Error.WriteLine("build close mine");
                     Build(state, state.Sites[state.TouchedSite], "MINE");
                     TrainStructured(state);
                     return;
                 }
                 if (state.TouchedSite != -1 && state.Sites[state.TouchedSite].structureType == 1 && state.Sites[state.TouchedSite].param1 < 700)
                 {
+                    Console.Error.WriteLine("build close tower");
                     Build(state, state.Sites[state.TouchedSite], "TOWER");
                     TrainStructured(state);
                     return;
                 }
             }
+            if (Barracks.All(x => x.structureType == -1))
+            {
+                Console.Error.WriteLine("build first barrack");
 
+                Build(state, Barracks.OrderBy(x => x.dist).First(), "BARRACKS-KNIGHT");
+                TrainStructured(state);
+                return;
+
+            }
             if (Mines.Count(x => x.owner == 0 && x.structureType == 0) < 3 && !state.Units.Any(x =>
                     x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 300))
             {
+                Console.Error.WriteLine("building mines");
                 Build(state, Mines.Where(x => x.structureType == -1).OrderBy(x => x.dist).First(), "MINE");
                 TrainStructured(state);
                 return;
@@ -500,9 +493,9 @@ class Player
 
             
 
-            if (Towers.Any(x => x.structureType != 1))
+            if (Towers.Any(x => x.structureType != 1)&&state.Sites.Any(x=>x.owner==1&&x.structureType==2&&x.param2==0))
             {
-               
+                Console.Error.WriteLine("building tower");
                 Build(state, Towers.Where(x=>x.structureType!=1).OrderBy(x=>x.dist).First(), "TOWER");
                 TrainStructured(state);
                 return;
@@ -511,12 +504,14 @@ class Player
             if (state.Gold > 150)
             {
                 if (Barracks.Any(x => x.structureType != 2)){
-                    if (Barracks.Any(x => x.structureType != 2&&x.param2== 2))
-                    {
-                        Build(state,Barracks.OrderBy(x=>x.dist).First(),"BARRACKS-GIANT");
-                        TrainStructured(state);
-                        return;
-                    }
+                    //if (Barracks.Any(x => x.structureType != 2&&x.param2!= 2))
+                    //{
+                    //    Console.Error.WriteLine("building giants");
+                    //    Build(state,Barracks.OrderBy(x=>x.dist).First(),"BARRACKS-GIANT");
+                    //    TrainStructured(state);
+                    //    return;
+                    //}
+                    Console.Error.WriteLine("building more knights");
                     Build(state, Barracks.OrderBy(x => x.dist).First(), "BARRACKS-KNIGHT");
                     TrainStructured(state);
                     return;
@@ -525,6 +520,14 @@ class Player
 
             if (MyTurf.Any(x => x.structureType == -1))
             {
+                if (MyTurf.Any(x => x.structureType == -1 && x.gold > 0))
+                {
+                    Console.Error.WriteLine("building turf mines");
+                    Build(state, MyTurf.Where(x => x.structureType == -1 && x.gold > 0).OrderBy(x => x.dist).First(), "MINE");
+                    TrainStructured(state);
+                    return;
+                }
+                Console.Error.WriteLine("building mine mines");
                 Build(state, Mines.Where(x => x.structureType != 0).OrderBy(x => x.dist).First(), "MINE");
                 TrainStructured(state);
                 return;
@@ -533,32 +536,94 @@ class Player
 
         }
 
+        private void SetMyTurf(State state, int distx)
+        {
+            Console.Error.WriteLine("Resetting my turf");
+            MyTurf = state.Sites.Where(x => x.distXstart < distx&&!(x.owner==1&&x.structureType==1)).ToList();
+            if (!Towers.Any())
+            {
+                Towers = MyTurf.OrderBy(x => DistansTo(x.x, x.y, 700, 500)).Take(3).ToList();
+
+            }
+            else if (Towers.Any(x => x.owner == 1 && x.structureType == 1))
+            {
+                Towers = MyTurf.OrderBy(x => DistansTo(x.x, x.y, 700, 500)).Take(Towers.Count(x => !(x.owner == 1 && x.structureType == 1))).ToList();
+
+            }
+
+            if (!Barracks.Any())
+            {
+                Barracks = MyTurf.Where(x => Towers.All(y => x.siteId != y.siteId)).OrderByDescending(x => x.distXstart).Take(2).ToList();
+                Barracks.Add(MyTurf.Where(x => Math.Abs(startY - x.y) < 300).OrderBy(x => x.distXstart).Skip(1).First());
+
+            }
+            else if (Barracks.Any(x => x.owner == 1 && x.structureType == 1))
+            {
+                var tempB = Barracks.Where(x => !(x.owner == 1 && x.structureType == 1)).ToList();
+                var tempB2 = MyTurf.OrderByDescending(x => x.distXstart).Take(Barracks.Count(x => !(x.owner == 1 && x.structureType == 1))).ToList();
+                Barracks.Clear();
+                Barracks.AddRange(tempB2);
+                Barracks.AddRange(tempB);
+            }
+
+            Mines = MyTurf.Where(x => Towers.All(y => x.siteId != y.siteId) && Barracks.All(y => x.siteId != y.siteId)).ToList();
+            foreach (var site in MyTurf)
+            {
+                Console.Error.WriteLine("myturf: " + site.siteId);
+            }
+            foreach (var tower in Towers)
+            {
+                Console.Error.WriteLine("turftower: " + tower.siteId);
+            }
+            foreach (var site in Barracks)
+            {
+                Console.Error.WriteLine("turfbarracks: " + site.siteId);
+            }
+            foreach (var site in Mines)
+            {
+                Console.Error.WriteLine("turfMines: " + site.siteId);
+            }
+        }
+
         private void TrainStructured(State state)
         {
-            var start = Barracks.FirstOrDefault(x => x.structureType == 2 && x.param2 == 0);
-            if (start != null && state.Sites.Count(x=>x.structureType==1&&x.owner==1)<3){
             
+            var start = Barracks.FirstOrDefault(x => x.structureType == 2 && x.param2 == 0);
+            if (start != null && state.Sites.Count(x=>x.structureType==1&&x.owner==1)<3&&state.Units.Count(x=>x.owner==0&&x.type==0)<2){
+            
+                Console.Error.WriteLine("Train start");
                 Train(new List<Site>() { start });
                 return;
                 }
+
+            if (state.Gold < 130 && state.Gold > 80 &&MyTurf.Count(x=>x.structureType==0)>2&&!state.Units.Any(x=>x.owner==0&&x.type==0))
+            {
+                Train();
+                return;
+            }
             if (state.Gold > 200)
             {
-                if (!state.Units.Any(x => x.owner == 0 && x.type == 2)&&Barracks.Any(x=>x.param2==2))
-                {
-                    var giant = Barracks.First(x => x.param2 == 2);
-                    Train(new List<Site>(){giant});
-                    return;
-                }
+                
+
+                //if (!state.Units.Any(x => x.owner == 0 && x.type == 2)&&Barracks.Any(x=>x.param2==2))
+                //{
+                //    Console.Error.WriteLine("Train giants");
+
+                //    var giant = Barracks.First(x => x.param2 == 2);
+                //    Train(new List<Site>(){giant});
+                //    return;
+                //}
 
                 if (Barracks.Count > 1)
                 {
+                    Console.Error.WriteLine("Train knights");
                     var knights = Barracks.Where(x => x.param2 == 0);
                     Train(knights);
                     return;
                 }
             }
 
-            Train();
+            Train(Barracks);
         }
     }
 
