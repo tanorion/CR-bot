@@ -209,6 +209,8 @@ class Player
                 {
                     skip = 1;
                 }
+
+                skip = 1;
                 aimBarrack = state.Sites.Where(x => Math.Abs(x.y - startY) < 400).OrderBy(x => x.distXstart).Skip(skip).First().siteId;
                 Console.Error.WriteLine("aimbarrack: " + aimBarrack + " skip: " + skip);
             }
@@ -263,8 +265,15 @@ class Player
                     return;
                     
                 }
+                if (state.Units.Count(x => x.owner == 1 && x.type == 0) > 0)
+                {
+                    Console.Error.WriteLine("Rush: Building closest knights because knights incoming");
+                    aimBarrack = state.Sites.Where(x => x.structureType == -1 &&x.distXstart>Math.Abs(state.Queen.x-startX)).OrderBy(x => x.dist).First().siteId;
+                    Build(state, state.Sites[aimBarrack], "BARRACKS-KNIGHT");
+                    Train();
+                    return;
+                }
 
-        
                 Console.Error.WriteLine("Rush: Building first knights");
 
                 Build(state, state.Sites[aimBarrack], "BARRACKS-KNIGHT");
@@ -364,6 +373,7 @@ class Player
                 state.Sites[state.TouchedSite].owner == 0 && state.Sites[state.TouchedSite].structureType == 1)
             {
                 Console.Error.WriteLine("Rush: Building Tower when thouching in end");
+                Build(state, state.Sites[state.TouchedSite], "TOWER");
                 TrainBest(barracks);
                 return; 
             }
@@ -489,7 +499,7 @@ class Player
                 return;
 
             }
-            var nonBuilt = state.Sites.Where(x => (x.owner == -1 && x.structureType == -1)).OrderBy(x => x.dist).ToList();
+            var nonBuilt = state.Sites.Where(x => (x.owner == -1 && x.structureType == -1&&x.distXstart<1300)).OrderBy(x => x.dist).ToList();
             if (!nonBuilt.Any())
             {
                 nonBuilt = state.Sites.Where(x => x.owner == 0 && x.structureType == 0).OrderBy(x => x.dist)
@@ -517,6 +527,18 @@ class Player
 
         public void Build(State state, Site site, string building)
         {
+            if (DistansTo(site.x, site.y, state.EnemyQueen.x, state.EnemyQueen.y) < 150)
+            {
+                Console.WriteLine($"BUILD {site.siteId} TOWER");
+                return;
+            }
+
+            if (state.Units.Any(x =>x.owner==1&&x.type==0&& DistansTo(site.x, site.y, x.x, x.y) < 400) && building == "MINE")
+            {
+                Console.WriteLine($"BUILD {site.siteId} TOWER");
+                return; 
+            }
+
             if (state.TouchedSite == site.siteId)
             {
                 Console.WriteLine($"BUILD {site.siteId} {building}");
