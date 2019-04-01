@@ -219,10 +219,10 @@ class Player
             var mines = state.Sites.Where(x => x.owner == 0 && x.structureType == 0);
 
             if (state.Queen.health < 15 && state.Units.Any(x =>
-                    x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 300))
+                    x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 400))
             {
-                Move(startX, startY);
-                Train(new List<Site>() { barracks.First() });
+                RunAway(state);
+                TrainBest(barracks);
                 return;
             }
 
@@ -231,12 +231,12 @@ class Player
                 if (state.Units.Any(x => x.owner == 1 && x.type == 0))
                 {
                     SmallDefend(state);
-                    Train(new List<Site>() { barracks.First() });
+                    TrainBest(barracks);
                     return;
                 }
 
                 SmallDefend(state, 6);
-                Train(new List<Site>() { barracks.First() });
+                TrainBest(barracks);
                 return;
 
             }
@@ -253,6 +253,11 @@ class Player
                     return;
                 }
                 Console.Error.WriteLine("Rush: Building first knights");
+                if (state.Sites[aimBarrack].owner == 1 && state.Sites[aimBarrack].structureType == 1)
+                {
+                    aimBarrack = state.Sites.Where(x => x.structureType != 1).OrderBy(x => x.dist).First().siteId;
+                }
+
                 Build(state, state.Sites[aimBarrack], "BARRACKS-KNIGHT");
                 Train();
                 return;
@@ -265,8 +270,8 @@ class Player
             if (state.Units.Count(x => x.owner == 1 && x.type == 0) > 2 && state.Queen.health < 80 || state.EnemyQueen.health < state.Queen.health&& state.Turn>170)
             {  
                     SmallDefend(state);
-                    Train(new List<Site>(){barracks.First()});
-                    return;
+                TrainBest(barracks);
+                return;
             }
             if (goodTowers.Count() < 3 || movedToEnd)
             {
@@ -291,7 +296,7 @@ class Player
             {
                 Console.Error.WriteLine("Rush: Building Tower for close enemies");
                 Build(state, closeEnemyBarrack, "TOWER");
-                Train(new List<Site>() { barracks.First() });
+                TrainBest(barracks);
                 return;
             }
             if (barracks.Count() > 1)
@@ -316,7 +321,7 @@ class Player
                     {
                         Console.Error.WriteLine("Rush: Building frontline knights barracks");
                         Build(state, state.Sites[state.TouchedSite], "BARRACKS-KNIGHT");
-                        Train(new List<Site>() { barracks.First() });
+                        TrainBest(barracks);
                         return;
                     }
 
@@ -327,7 +332,7 @@ class Player
                 {
                     Console.Error.WriteLine("Rush: Building mine when touching normal way");
                     Build(state, state.Sites[state.TouchedSite], "MINE");
-                    Train(new List<Site>() { barracks.First() });
+                    TrainBest(barracks);
                     return;
                 }
 
@@ -340,7 +345,7 @@ class Player
                     }
                     Console.Error.WriteLine("Rush: Building mine from list");
                     Build(state, goodMines.First(), "MINE");
-                    Train(new List<Site>() { barracks.First() });
+                    TrainBest(barracks);
                     return;
                 }
             }
@@ -349,23 +354,42 @@ class Player
                 state.Sites[state.TouchedSite].owner == 0 && state.Sites[state.TouchedSite].structureType == 1)
             {
                 Console.Error.WriteLine("Rush: Building Tower when thouching in end");
-                Build(state, state.Sites[state.TouchedSite], "TOWER");
-                Train(new List<Site>() { barracks.First() });
+                TrainBest(barracks);
                 return; 
             }
+            if (state.Units.Any(x => x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 300))
+            {
+                SmallDefend(state);
+                TrainBest(barracks);
+                return;
+            }
+
 
             if (!goodTowers.Any())
             {
                 Console.Error.WriteLine("Rush: No valid towers moving home");
                 Move(startX, startY);
-                Train(new List<Site>() { barracks.First() });
+                TrainBest(barracks);
                 return;
             }
 
             Console.Error.WriteLine("Rush: Building Tower fallback");
             Build(state, goodTowers.First(), "TOWER");
-            Train(new List<Site>() { barracks.First() });
+            TrainBest(barracks);
             return; 
+        }
+
+        private void RunAway(State state)
+        {
+            if (state.TouchedSite != -1 && (state.Sites[state.TouchedSite].structureType == -1 ||
+                state.Sites[state.TouchedSite].structureType == 0))
+            {
+                Build(state, state.Sites[state.TouchedSite],"TOWER");
+                return;
+            }
+
+            Move(startX, startY);
+            return;
         }
 
         private void Move(int x, int y)
@@ -373,7 +397,7 @@ class Player
             Console.WriteLine($"MOVE {x} {y}");
         }
 
-        private void Train(IEnumerable<Site> barracks = null)
+        private void Train(IEnumerable<Site> barracks)
         {
             var s = "TRAIN";
             if (barracks != null)
@@ -382,6 +406,24 @@ class Player
                 {
                     s = s + " " + b.siteId;
                 }
+            }
+            Console.WriteLine(s);
+        }
+        private void Train(Site barracks = null)
+        {
+            var s = "TRAIN";
+            if (barracks != null)
+            {
+                s=s +" "+ barracks.siteId);
+            }
+            Console.WriteLine(s);
+        }
+        private void TrainBest(IEnumerable<Site> barracks = null)
+        {
+            var s = "TRAIN";
+            if (barracks != null && barracks.Any())
+            {
+                Train(barracks.OrderByDescending(x => x.distXstart).First());
             }
             Console.WriteLine(s);
         }
