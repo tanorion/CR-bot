@@ -491,7 +491,7 @@ class Player
         private bool InEnemyTowerRange(State state, Site site, int allowance=0)
         {
             return state.Sites.Where(x => x.owner == 1 && x.structureType == 1)
-                .Any(y => DistansTo(y.x, y.y, site.x, site.y) +site.r< y.param2-allowance);
+                .Any(y => DistansTo(y.x, y.y, site.x, site.y) +site.r< y.param2-allowance||(y.dist<site.dist&&y.distXstart<site.distXstart));
         }
 
         private void SmallDefend(State state, int numTowers = 3)
