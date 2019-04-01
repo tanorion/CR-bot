@@ -212,6 +212,8 @@ class Player
 
                 skip = 1;
                 aimBarrack = state.Sites.Where(x => Math.Abs(x.y - startY) < 400).OrderBy(x => x.distXstart).Skip(skip).First().siteId;
+                aimBarrack = state.Sites.Where(x => Math.Abs(x.x - startX) > 400 && Math.Abs(x.y - startY) > 200).OrderBy(x => x.dist).First().siteId;
+
                 Console.Error.WriteLine("aimbarrack: " + aimBarrack + " skip: " + skip);
             }
 
@@ -489,7 +491,7 @@ class Player
         private bool InEnemyTowerRange(State state, Site site)
         {
             return state.Sites.Where(x => x.owner == 1 && x.structureType == 1)
-                .Any(y => DistansTo(y.x, y.y, site.x, site.y) < y.param2);
+                .Any(y => DistansTo(y.x, y.y, site.x, site.y) < y.param2-200);
         }
 
         private void SmallDefend(State state, int numTowers = 3)
@@ -530,7 +532,7 @@ class Player
             if (towers.Count() < numTowers && towers.Any(x=>x.distXstart-100<Math.Abs(state.Queen.x-startX)))
             {
                 var tower = towers.First();
-                Build(state, nonBuilt.OrderBy(x => DistansTo(x.x, x.y, tower.x, tower.y)).First(), "TOWER");
+                Build(state, nonBuilt.OrderBy(x => x.dist).First(), "TOWER");
                 return;
             }
 
