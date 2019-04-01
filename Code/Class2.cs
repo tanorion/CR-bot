@@ -527,12 +527,15 @@ class Player
                 Build(state, nonBuilt.First(), "TOWER");
                 return;
             }
-            if (towers.Count() < numTowers)
+            if (towers.Count() < numTowers && towers.Any(x=>x.distXstart-100<Math.Abs(state.Queen.x-startX)))
             {
                 var tower = towers.First();
                 Build(state, nonBuilt.OrderBy(x => DistansTo(x.x, x.y, tower.x, tower.y)).First(), "TOWER");
                 return;
             }
+
+            Build(state, nonBuilt.First(), "TOWER");
+            return;
 
         }
 
