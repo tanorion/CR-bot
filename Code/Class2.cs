@@ -34,6 +34,7 @@ class Player
         public int queenStartHp = -1;
         public int aimBarrack = -1;
         public bool movedToEnd = false;
+        public bool buildFirstBarrack = false;
 
         public List<Site> Towers =new List<Site>();
         public List<Site> Barracks =new List<Site>();
@@ -252,16 +253,25 @@ class Player
                     Train();
                     return;
                 }
-                Console.Error.WriteLine("Rush: Building first knights");
-                if (state.Sites[aimBarrack].owner == 1 && state.Sites[aimBarrack].structureType == 1)
+
+                if (buildFirstBarrack)
                 {
+                    Console.Error.WriteLine("Rush: Building closest knights");
                     aimBarrack = state.Sites.Where(x => x.structureType != 1).OrderBy(x => x.dist).First().siteId;
+                    Build(state, state.Sites[aimBarrack], "BARRACKS-KNIGHT");
+                    Train();
+                    return;
+                    
                 }
+
+        
+                Console.Error.WriteLine("Rush: Building first knights");
 
                 Build(state, state.Sites[aimBarrack], "BARRACKS-KNIGHT");
                 Train();
                 return;
             }
+            buildFirstBarrack = true;
             var goodTowers = state.Sites.Where(x => x.structureType != 1 && x.siteId != aimBarrack && Math.Abs(x.x - startX) > Math.Abs(state.Queen.x - startX) && (x.owner != 0) && !InEnemyTowerRange(state, x)&&x.distXstart<1500).OrderBy(x => x.dist).ToList();
            
 
@@ -414,7 +424,7 @@ class Player
             var s = "TRAIN";
             if (barracks != null)
             {
-                s=s +" "+ barracks.siteId);
+                s=s +" "+ barracks.siteId;
             }
             Console.WriteLine(s);
         }
@@ -425,7 +435,11 @@ class Player
             {
                 Train(barracks.OrderByDescending(x => x.distXstart).First());
             }
-            Console.WriteLine(s);
+            else
+            {
+                Console.WriteLine(s);
+            }
+           
         }
 
         private void SetLeastMines(Unit queen)
