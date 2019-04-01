@@ -337,7 +337,7 @@ class Player
 
             }
            
-            if (mines.Count() < 6||!state.Sites.Any(x=>x.owner==1&&x.structureType==2) && !state.Units.Any(x => x.owner == 1 && x.type == 0&&DistansTo(x.x,x.y,state.Queen.x,state.Queen.y)<300))
+            if ((mines.Count() < 6||!state.Sites.Any(x=>x.owner==1&&x.structureType==2)) && !state.Units.Any(x => x.owner == 1 && x.type == 0&&DistansTo(x.x,x.y,state.Queen.x,state.Queen.y)<300))
             {
                 var goodMines = goodTowers.Where(x => x.gold != 0);
                 foreach (var t in goodMines)
