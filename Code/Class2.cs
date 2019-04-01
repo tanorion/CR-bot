@@ -35,6 +35,7 @@ class Player
         public int aimBarrack = -1;
         public bool movedToEnd = false;
         public bool buildFirstBarrack = false;
+        public int turnsSinceLastTrain = 0;
 
         public List<Site> Towers =new List<Site>();
         public List<Site> Barracks =new List<Site>();
@@ -432,9 +433,11 @@ class Player
 
         private void Train(IEnumerable<Site> barracks)
         {
+
             var s = "TRAIN";
             if (barracks != null)
             {
+                
                 foreach (var b in barracks.OrderByDescending(x=>x.distXstart))
                 {
                     s = s + " " + b.siteId;
@@ -447,22 +450,30 @@ class Player
             var s = "TRAIN";
             if (barracks != null)
             {
-                s=s +" "+ barracks.siteId;
+                s =s +" "+ barracks.siteId;
             }
             Console.WriteLine(s);
         }
         private void TrainBest(State state,IEnumerable<Site> barracks = null)
         {
             var s = "TRAIN";
+            var income = state.Sites.Where(x => x.owner == 0 && x.structureType == 0).Sum(y => y.param1);
+            turnsSinceLastTrain++;
+            Console.Error.WriteLine("turnsSinceLastTrain: " + turnsSinceLastTrain);
+            if (income > 4 && state.Gold + income * 5 < 160 && turnsSinceLastTrain > 2)
+            {
+                Console.WriteLine(s);
+                return;
+            }
             if (barracks != null && barracks.Any())
             {
-                Train(barracks.OrderBy(x => DistansTo(x.x,x.y, state.EnemyQueen.x, state.EnemyQueen.y)).First());
+                Train(barracks.OrderBy(x => DistansTo(x.x, x.y, state.EnemyQueen.x, state.EnemyQueen.y)).First());
             }
             else
             {
                 Console.WriteLine(s);
             }
-           
+
         }
 
         private void SetLeastMines(Unit queen)
