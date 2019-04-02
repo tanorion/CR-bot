@@ -219,7 +219,7 @@ class Player
 
                 skip = 1;
                 aimBarrack = state.Sites.Where(x => Math.Abs(x.y - startY) < 400).OrderBy(x => x.distXstart).Skip(skip).First().siteId;
-                aimBarrack = state.Sites.Where(x => Math.Abs(x.x - startX) > 400 && Math.Abs(x.y - startY) > 200).OrderBy(x => x.dist).First().siteId;
+                aimBarrack = state.Sites.Where(x => Math.Abs(x.x - startX) > 400 && Math.Abs(x.y - startY) > 200).OrderBy(x => DistansTo(x.x,x.y,state.Queen.x,state.Queen.y,1,2)).First().siteId;
 
                 Console.Error.WriteLine("aimbarrack: " + aimBarrack + " skip: " + skip);
             }
@@ -307,7 +307,7 @@ class Player
                 return;
             }
 
-            if (state.Sites.Any(x => x.owner == 1 && x.structureType == 2 && x.param2 == 0) && state.Turn < 50 &&
+            if ((state.Sites.Any(x => x.owner == 1 && x.structureType == 2 && x.param2 == 0)||state.Queen.health<46) && state.Turn < 50 &&
                 mines.Count() > 1)
             {
                 SmallDefend(state);
@@ -602,9 +602,9 @@ class Player
             Console.WriteLine($"BUILD {site.siteId} {building}");
         }
 
-        private int DistansTo(int x, int y, int x2, int y2)
+        private int DistansTo(int x, int y, int x2, int y2, double weightX=1,double weightY=1)
         {
-            return (int)Math.Sqrt(Math.Pow(Math.Abs(x - x2), 2) + Math.Pow(Math.Abs(y - y2), 2));
+            return (int)Math.Sqrt(Math.Pow(weightX*Math.Abs(x - x2), 2) + Math.Pow(weightY*Math.Abs(y - y2), 2));
         }
 
         public void StructuredPlay(State state)
