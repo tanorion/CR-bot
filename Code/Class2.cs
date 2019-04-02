@@ -230,10 +230,27 @@ class Player
             var barracks = state.Sites.Where(x => x.owner == 0 && x.structureType == 2).OrderByDescending(x=>x.distXstart);
             var mines = state.Sites.Where(x => x.owner == 0 && x.structureType == 0);
             var income = state.Sites.Where(x => x.owner == 0 && x.structureType == 0).Sum(y => y.param1);
-            var towers= state.Sites.Where(x => x.owner == 0 && x.structureType == 1).ToList();
-            if (income>5&&state.Queen.health < state.EnemyQueen.health && state.Turn > 150&&state.Sites.Count(x=>x.owner==1&&x.structureType==1)>2)
+            var towers = state.Sites.Where(x => x.owner == 0 && x.structureType == 1).ToList();
+
+            if (state.Queen.health < state.EnemyQueen.health && state.Turn > 150 && state.Sites.Count(x => x.owner == 1 && x.structureType == 1) > 2)
             {
-                TowerBreaker(state);
+                if (state.Queen.health < 15 && state.Units.Any(x =>
+                        x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 1100))
+                {
+                    Console.Error.WriteLine("TowerBreak! but run awaaay");
+                    RunAway(state);
+                    Train();
+                    return;
+                }
+                if (income > 1)
+                {
+                    Console.Error.WriteLine("TowerBreak!");
+
+                    TowerBreaker(state);
+                    return;
+                }
+                Build(state, state.Sites.OrderBy(x => x.distXstart).First(x => x.gold > 0), "MINE");
+                Train();
                 return;
             }
 
@@ -245,12 +262,11 @@ class Player
                 return;
             }
 
-
             if (state.Queen.health < 10 && state.Sites.Any(x =>
-                    x.owner == 1 && x.structureType==2&&x.param2 == 0) && state.Sites.Any(x =>
-                    x.owner == 1 && x.structureType == 0)&& towers.Count()<5&& towers.Any(x=>x.param1<550))
+                    x.owner == 1 && x.structureType == 2 && x.param2 == 0) && state.Sites.Any(x =>
+                    x.owner == 1 && x.structureType == 0) && towers.Count() < 6 && towers.Any(x => x.param1 < 550) && (state.EnemyQueen.health < state.Queen.health || mines.Count() > 2))
             {
-                SmallDefend(state,5);
+                SmallDefend(state, 5);
                 TrainBest(state, barracks);
                 return;
             }
