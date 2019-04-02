@@ -230,7 +230,7 @@ class Player
             var barracks = state.Sites.Where(x => x.owner == 0 && x.structureType == 2).OrderByDescending(x=>x.distXstart);
             var mines = state.Sites.Where(x => x.owner == 0 && x.structureType == 0);
             var income = state.Sites.Where(x => x.owner == 0 && x.structureType == 0).Sum(y => y.param1);
-
+            var towers= state.Sites.Where(x => x.owner == 0 && x.structureType == 1).ToList();
             if (income>5&&state.Queen.health < state.EnemyQueen.health && state.Turn > 150&&state.Sites.Count(x=>x.owner==1&&x.structureType==1)>2)
             {
                 TowerBreaker(state);
@@ -238,9 +238,19 @@ class Player
             }
 
             if (state.Queen.health < 15 && state.Units.Any(x =>
-                    x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 400))
+                    x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 900))
             {
                 RunAway(state);
+                TrainBest(state, barracks);
+                return;
+            }
+
+
+            if (state.Queen.health < 10 && state.Sites.Any(x =>
+                    x.owner == 1 && x.structureType==2&&x.param2 == 0) && state.Sites.Any(x =>
+                    x.owner == 1 && x.structureType == 0)&& towers.Count()<5&& towers.Any(x=>x.param1<550))
+            {
+                SmallDefend(state,5);
                 TrainBest(state, barracks);
                 return;
             }
