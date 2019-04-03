@@ -37,6 +37,7 @@ class Player
         public bool buildFirstBarrack = false;
         public int turnsSinceLastTrain = 0;
         public int Turns = 0;
+        public int CloseEnemyBarrackId = -1;
 
         public List<Site> Towers =new List<Site>();
         public List<Site> Barracks =new List<Site>();
@@ -232,6 +233,8 @@ class Player
             var income = state.Sites.Where(x => x.owner == 0 && x.structureType == 0).Sum(y => y.param1);
             var towers = state.Sites.Where(x => x.owner == 0 && x.structureType == 1).ToList();
 
+
+
             if (state.Queen.health < state.EnemyQueen.health && state.Turn > 150 && state.Sites.Count(x => x.owner == 1 && x.structureType == 1) > 2)
             {
                 if (state.Queen.health < 15 && state.Units.Any(x =>
@@ -332,6 +335,18 @@ class Player
                 Train();
                 return;
             }
+            if (CloseEnemyBarrackId != -1 && CloseEnemyBarrackId == state.TouchedSite)
+            {
+                if (!(state.Sites[CloseEnemyBarrackId].owner == 1 && state.Sites[CloseEnemyBarrackId].structureType == 1))
+                {
+                    Console.Error.WriteLine("Rush: Building Tower for close enemies");
+                    Build(state, state.Sites[CloseEnemyBarrackId], "TOWER");
+                    TrainBest(state, barracks);
+                    CloseEnemyBarrackId = -1;
+                    return;
+                }
+                CloseEnemyBarrackId = -1;
+            }
 
             if ((state.Sites.Any(x => x.owner == 1 && x.structureType == 2 && x.param2 == 0)||state.Queen.health<46) && state.Turn < 50 &&
                 mines.Count() > 1)
@@ -347,6 +362,7 @@ class Player
                 x.owner == 1 && x.structureType == 2 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 500 && !InEnemyTowerRange(state, x,200));
             if (closeEnemyBarrack != null && state.Units.Count(x => x.owner == 1 && x.type == 0) < 5 &&state.Queen.health>30)
             {
+                CloseEnemyBarrackId = closeEnemyBarrack.siteId;               
                 Console.Error.WriteLine("Rush: Building Tower for close enemies");
                 Build(state, closeEnemyBarrack, "TOWER");
                 TrainBest(state, barracks);
