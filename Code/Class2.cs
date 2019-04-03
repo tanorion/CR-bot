@@ -347,7 +347,16 @@ class Player
                 }
                 CloseEnemyBarrackId = -1;
             }
-
+            var closeEnemyBarrack = state.Sites.FirstOrDefault(x =>
+                x.owner == 1 && x.structureType == 2 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 500 && !InEnemyTowerRange(state, x, 200));
+            if (closeEnemyBarrack != null && state.Units.Count(x => x.owner == 1 && x.type == 0) < 5 && state.Queen.health > 30)
+            {
+                CloseEnemyBarrackId = closeEnemyBarrack.siteId;
+                Console.Error.WriteLine("Rush: Building Tower for close enemies");
+                Build(state, closeEnemyBarrack, "TOWER");
+                TrainBest(state, barracks);
+                return;
+            }
             if ((state.Sites.Any(x => x.owner == 1 && x.structureType == 2 && x.param2 == 0)||state.Queen.health<46) && state.Turn < 50 &&
                 mines.Count() > 1)
             {
@@ -358,16 +367,7 @@ class Player
                 buildFirstBarrack = true;
             var goodTowers = state.Sites.Where(x => x.structureType != 1 && x.siteId != aimBarrack && Math.Abs(x.x - startX) > Math.Abs(state.Queen.x - startX) && (x.owner != 0) && !InEnemyTowerRange(state, x) && x.distXstart < 1500).OrderBy(x => x.dist).ToList();
 
-            var closeEnemyBarrack = state.Sites.FirstOrDefault(x =>
-                x.owner == 1 && x.structureType == 2 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 500 && !InEnemyTowerRange(state, x,200));
-            if (closeEnemyBarrack != null && state.Units.Count(x => x.owner == 1 && x.type == 0) < 5 &&state.Queen.health>30)
-            {
-                CloseEnemyBarrackId = closeEnemyBarrack.siteId;               
-                Console.Error.WriteLine("Rush: Building Tower for close enemies");
-                Build(state, closeEnemyBarrack, "TOWER");
-                TrainBest(state, barracks);
-                return;
-            }
+           
             Console.Error.WriteLine("enemy knights: " + state.Units.Count(x => x.owner == 1 && x.type == 0));
 
             if (state.Units.Count(x => x.owner == 1 && x.type == 0) > 2 && state.Queen.health < 80 || state.EnemyQueen.health < state.Queen.health&& state.Turn>170)
