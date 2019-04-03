@@ -412,7 +412,8 @@ class Player
 
                 if (barracks.Count() == 1)
                 {
-                    if (state.TouchedSite != -1 && !(state.Sites[state.TouchedSite].owner == 1 && state.Sites[state.TouchedSite].structureType == 1) && state.Sites[state.TouchedSite].distXstart > 900&& !barracks.Any(x=>x.distXstart>900))
+                    if (state.TouchedSite != -1 && !(state.Sites[state.TouchedSite].owner == 1 && state.Sites[state.TouchedSite].structureType == 1) && state.Sites[state.TouchedSite].distXstart > 900&& !barracks.Any(x=>x.distXstart>900)
+                        && !(state.Sites[state.TouchedSite].owner == 0 && state.Sites[state.TouchedSite].structureType == 1 && towers.Count() < 4))
                     {
                         Console.Error.WriteLine("Rush: Building frontline knights barracks");
                         Build(state, state.Sites[state.TouchedSite], "BARRACKS-KNIGHT");
