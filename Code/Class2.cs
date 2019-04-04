@@ -38,6 +38,7 @@ class Player
         public int turnsSinceLastTrain = 0;
         public int Turns = 0;
         public int CloseEnemyBarrackId = -1;
+        public int CloseEnemyBarrackRange = 500;
 
         public List<Site> Towers =new List<Site>();
         public List<Site> Barracks =new List<Site>();
@@ -235,13 +236,23 @@ class Player
 
 
 
-            if (state.Queen.health < state.EnemyQueen.health && state.Turn > 150 && state.Sites.Count(x => x.owner == 1 && x.structureType == 1) > 2)
+            if (state.Queen.health < state.EnemyQueen.health && state.Turn > 100 && state.Sites.Count(x => x.owner == 1 && x.structureType == 1) > 2)
             {
+
+
                 if (state.Queen.health < 15 && state.Units.Any(x =>
                         x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 1100))
                 {
                     Console.Error.WriteLine("TowerBreak! but run awaaay");
                     RunAway(state);
+                    Train();
+                    return;
+                }
+                var goodMine = state.Sites.Where(x => x.gold != 0 && (x.maxMineSize == -1 || x.maxMineSize > x.param1)).OrderBy(x => x.distXstart).First();
+                if (!state.Units.Any(x =>
+                        x.owner == 1 && x.type == 0) && state.Gold < 200)
+                {
+                    Build(state, goodMine, "MINE");
                     Train();
                     return;
                 }
@@ -252,7 +263,7 @@ class Player
                     TowerBreaker(state);
                     return;
                 }
-                Build(state, state.Sites.OrderBy(x => x.distXstart).First(x => x.gold > 0), "MINE");
+                Build(state, goodMine, "MINE");
                 Train();
                 return;
             }
@@ -290,7 +301,7 @@ class Player
             }
             if (!barracks.Any())
             {
-                if (state.TouchedSite != -1 && state.TouchedSite != aimBarrack && ((state.Sites[state.TouchedSite].structureType == -1 && state.Sites[state.TouchedSite].owner == -1)
+                if (state.TouchedSite != -1 && state.Sites[state.TouchedSite].gold!=0&& state.TouchedSite != aimBarrack && ((state.Sites[state.TouchedSite].structureType == -1 && state.Sites[state.TouchedSite].owner == -1)
                    || (state.Sites[state.TouchedSite].structureType == 0 && state.Sites[state.TouchedSite].owner == 0 && state.Sites[state.TouchedSite].maxMineSize > state.Sites[state.TouchedSite].param1)
                     || (state.Sites[state.TouchedSite].structureType != 1 && state.Sites[state.TouchedSite].owner == 1))
                     && state.Units.Count(x => x.owner == 1 && x.type == 0) == 0)
@@ -301,7 +312,7 @@ class Player
                     return;
                 }
 
-                var closesite = state.Sites.FirstOrDefault(x => x.dist - x.r < 100 && x.structureType == -1 && x.siteId !=aimBarrack);
+                var closesite = state.Sites.FirstOrDefault(x => x.dist - x.r < 100 && x.structureType == -1 && x.siteId !=aimBarrack&&x.gold!=0);
                 if (closesite != null)
                 {
                     Console.Error.WriteLine("Rush: Building mine when close");
@@ -343,12 +354,13 @@ class Player
                     Build(state, state.Sites[CloseEnemyBarrackId], "TOWER");
                     TrainBest(state, barracks);
                     CloseEnemyBarrackId = -1;
+                    CloseEnemyBarrackRange = 1000;
                     return;
                 }
                 CloseEnemyBarrackId = -1;
             }
             var closeEnemyBarrack = state.Sites.FirstOrDefault(x =>
-                x.owner == 1 && x.structureType == 2 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 500 && !InEnemyTowerRange(state, x, 200));
+                x.owner == 1 && x.structureType == 2 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < CloseEnemyBarrackRange && !InEnemyTowerRange(state, x, 200));
             if (closeEnemyBarrack != null && state.Units.Count(x => x.owner == 1 && x.type == 0) < 5 && state.Queen.health > 30)
             {
                 CloseEnemyBarrackId = closeEnemyBarrack.siteId;
@@ -523,6 +535,7 @@ class Player
         private void TrainBest(State state,IEnumerable<Site> barracks = null)
         {
             
+        
             var income = state.Sites.Where(x => x.owner == 0 && x.structureType == 0).Sum(y => y.param1);
            
             Console.Error.WriteLine("turnsSinceLastTrain: " + turnsSinceLastTrain);
@@ -533,7 +546,18 @@ class Player
             }
             if (barracks != null && barracks.Any())
             {
-                Train(barracks.OrderBy(x => DistansTo(x.x, x.y, state.EnemyQueen.x, state.EnemyQueen.y)).First());
+                var bestBarrack = barracks.OrderBy(x => DistansTo(x.x, x.y, state.EnemyQueen.x, state.EnemyQueen.y))
+                    .First();
+                if (state.Sites.Count(x =>
+                        x.owner == 1 && x.structureType == 1 && x.param2 > 300 &&
+                        DistansTo(x.x, x.y, bestBarrack.x, bestBarrack.y) < 200 + DistansTo(state.EnemyQueen.x,
+                            state.EnemyQueen.y, bestBarrack.x, bestBarrack.y)) > 2)
+                {
+                    Train();
+                    return;
+                }
+                    Train(bestBarrack);
+                    return;
             }
             else
             {
@@ -853,25 +877,35 @@ class Player
 
         private void TowerBreaker(State state)
         {
+  
             if (state.Gold < 250&&!state.Units.Any(x=>x.owner==0&&x.type==2))
             {
-                SmallDefend(state);
+                TowerBreakerBuildDefend(state);
+
                 Train();
                 return;
             }
 
-            if (state.Units.Any(x => x.owner == 0 && x.type == 2))
+            if (state.Units.Any(x => x.owner == 0 && x.type == 2)&& Math.Abs(state.Units.First(x => x.owner == 0 && x.type == 2).x-startX)>900)
             {
-                var barracks = state.Sites.Where(x => x.owner == 0 && x.structureType == 2 && x.param2 != 2);
+                var bestbarrack = state.Sites.Where(x => x.owner == 0 && x.structureType == 2 && x.param2 != 2).OrderBy(x => DistansTo(x.x, x.y, state.EnemyQueen.x, state.EnemyQueen.y)).FirstOrDefault();
                 SmallDefend(state);
-                TrainBest(state, barracks);
+                Train(bestbarrack);
                 return;
             }
             if (state.Sites.Any(x => x.owner == 0 && x.structureType == 2 && x.param2 == 2))
             {
                 var giantBarrack = state.Sites.First(x => x.owner == 0 && x.structureType == 2 && x.param2 == 2);
-                SmallDefend(state);
-                Train(giantBarrack);
+                TowerBreakerBuildDefend(state);
+                if (!state.Units.Any(x => x.owner == 0 && x.type == 2))
+                {
+                    Train(giantBarrack);
+                }
+                else
+                {
+                    Train();
+                }
+              
                 return;
 
             }
@@ -879,8 +913,28 @@ class Player
             var giantBarrackToBuild= state.Sites.Where(x => x.owner != 1 && x.structureType == 1 &&x.distXstart>500).OrderBy(x=>x.dist).First();
             Build(state,giantBarrackToBuild,"BARRACKS-GIANT");
             Train();
+            return;
 
         }
+
+        private void TowerBreakerBuildDefend(State state)
+        {
+            var newBarracks = state.Sites
+                .Where(x => !(x.owner == 1 && x.structureType == 1) && !(x.owner == 0 && x.structureType == 2) && state.Sites.Count(y =>
+                                y.owner == 1 && y.structureType == 1 && y.distXstart < x.distXstart) > 2)
+                .OrderByDescending(o => o.distXstart).FirstOrDefault();
+            if (newBarracks != null && state.Sites.All(x =>
+                    x.owner == 0 && x.structureType == 2 && x.param2 == 0 && x.distXstart < newBarracks.distXstart))
+            {
+                Build(state, newBarracks, "BARRACKS-KNIGHT");
+            }
+            else
+            {
+
+                SmallDefend(state);
+            }
+        }
+       
     }
 
 
