@@ -575,7 +575,7 @@ class Player
         {
             Console.Error.WriteLine("smalldefend");
             var towers = state.Sites.Where(x => x.owner == 0 && x.structureType == 1).ToList();
-            if (state.TouchedSite!=-1&& state.Sites[state.TouchedSite].param1<700&& state.Sites[state.TouchedSite].owner == 0 && state.Sites[state.TouchedSite].structureType == 1 
+            if (state.TouchedSite!=-1&& state.Sites[state.TouchedSite].param1<450&& state.Sites[state.TouchedSite].owner == 0 && state.Sites[state.TouchedSite].structureType == 1 
                 )//&& !state.Units.Any(x =>x.owner == 1 && x.type == 0 && DistansTo(x.x, x.y, state.Queen.x, state.Queen.y) < 200))
             {
                 Build(state, state.Sites[state.TouchedSite], "TOWER");
