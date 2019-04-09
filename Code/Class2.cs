@@ -183,6 +183,7 @@ class Player
 
                 site.dist = DistansTo(queen.x, queen.y, site.x, site.y);
                 site.distXstart = Math.Abs(startX - site.x);
+                site.distYstart= Math.Abs(startY - site.y);
                 //Console.Error.WriteLine($"id:{site.siteId} dist:{site.dist} owner:{site.owner} type: {site.structureType} param1:{site.param1} maxMine:{site.maxMineSize}");
             }
             SetLeastMines(queen);
@@ -385,6 +386,17 @@ class Player
             if ((state.Sites.Any(x => x.IsEnemys && x.IsKnightBarrack)||state.Queen.health<46) && state.Turn < 50 &&
                 mines.Count() > 1)
             {
+                if (!towers.Any())
+                {
+                    Console.Error.WriteLine("Rush: Building First Tower");
+                    var firstTower = state.Sites.Where(x =>
+                        x.IsUnbuilt && x.distYstart > state.Sites[aimBarrack].distYstart&&state.Sites.Count(y=>y.IsUnbuilt&&y.distYstart> state.Sites[aimBarrack].distYstart&&y.distXstart<x.distXstart)>2).OrderBy(x=>x.dist).First();
+                    SmartBuild(state,firstTower,"TOWER");
+                    TrainBest(state, barracks);
+                    return;
+                }
+                
+                Console.Error.WriteLine("Rush: Building First Defeence");
                 SmallDefend(state);
                 TrainBest(state, barracks);
                 return;
@@ -573,11 +585,11 @@ class Player
         {
             var testSites = state.Sites.Where(s=> (s.y< state.Queen.y&&s.y>y|| s.y > state.Queen.y && s.y < y)&&
                                                   (s.x < state.Queen.x && s.x > x || s.x > state.Queen.x && s.x < x) && 
-                                                  FindLineCircleIntersections(s.x,s.y,s.r,new PointF(state.Queen.x,state.Queen.y),new PointF(x,y),out var point1, out var point2  )>1).OrderBy(s => s.dist);
+                                                  FindLineCircleIntersections(s.x,s.y,s.r+15,new PointF(state.Queen.x,state.Queen.y),new PointF(x,y),out var point1, out var point2  )>1).OrderBy(s => s.dist);
             if (testSites.Any())
             {
                 var closest = testSites.First();
-                var tagentPoint = FindTangents(new PointF(closest.x, closest.y), closest.r,
+                var tagentPoint = FindTangents(new PointF(closest.x, closest.y), closest.r+15,
                     new PointF(state.Queen.x, state.Queen.y), out var point1, out var point2);
                 if (DistansTo(x, y, (int) point1.X, (int) point1.Y) < DistansTo(x, y, (int) point2.X, (int) point2.Y))
                 {
@@ -739,7 +751,18 @@ class Player
                 return;
 
             }
-            var nonBuilt = state.Sites.Where(x => (x.owner == -1 && x.IsUnbuilt&&x.distXstart<1300)&&!InEnemyTowerRange(state,x)).OrderBy(x => x.dist).ToList();
+            var nonBuilt = state.Sites.Where(x => (x.owner == -1 && x.IsUnbuilt && x.distXstart < 1300) && !InEnemyTowerRange(state, x)).OrderBy(x => x.dist).ToList();
+
+            if (towers.Count==1)
+            {
+                var nonBuiltTemp = nonBuilt.FirstOrDefault(x => x.distXstart < towers.First().distXstart);
+                if (nonBuiltTemp != null)
+                {
+                    SmartBuild(state, nonBuiltTemp, "TOWER");
+                    return;
+                }
+
+            }
             if (!nonBuilt.Any())
             {
                 nonBuilt = state.Sites.Where(x => x.IsPlayers && x.IsMine).OrderBy(x => x.dist)
@@ -788,12 +811,17 @@ class Player
 
         public void Build(State state, Site site, string building)
         {
-            if (state.TouchedSite == site.siteId||site.dist<61+30+site.r)
+            if (state.TouchedSite == site.siteId|| SiteIsBuildable(site))
             {
                 Console.WriteLine($"BUILD {site.siteId} {building}");
                 return;;
             }
             Move(state,site.x,site.y);
+        }
+
+        public bool SiteIsBuildable(Site site)
+        {
+            return site.dist < 61 + 15 + site.r;
         }
 
         private int DistansTo(int x, int y, int x2, int y2, double weightX=1,double weightY=1)
@@ -1199,6 +1227,7 @@ public class Site
     public int param1 { get; set; }
     public int param2 { get; set; }
     public int distXstart { get; set; }
+    public int distYstart { get; set; }
 
     public bool IsTower => structureType == 1;
     public bool IsMine => structureType == 0;
