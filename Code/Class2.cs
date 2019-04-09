@@ -485,7 +485,7 @@ class Player
                 return;
             }
 
-            Move(startX, startY == 0 ? 1920 : 0);
+            Move(startX, startY == 0 ? 1000 : 0);
             return;
   
         }
