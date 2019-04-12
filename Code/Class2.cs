@@ -220,9 +220,9 @@ class Player
                     skip = 1;
                 }
 
-                skip = 1;
+                //skip = 1;
                 aimBarrack = state.Sites.Where(x => Math.Abs(x.y - startY) < 400).OrderBy(x => x.distXstart).Skip(skip).First().siteId;
-                aimBarrack = state.Sites.Where(x => Math.Abs(x.x - startX) > 400 && Math.Abs(x.y - startY) > 200).OrderBy(x => DistansTo(x.x,x.y,state.Queen.x,state.Queen.y,1,2)).First().siteId;
+                aimBarrack = state.Sites.Where(x => Math.Abs(x.y - startY) < 400).OrderBy(x => x.distXstart).Skip(skip).Where(x => Math.Abs(x.x - startX) > 400 && Math.Abs(x.y - startY) > 200).OrderBy(x => DistansTo(x.x,x.y,state.Queen.x,state.Queen.y,1,2)).First().siteId;
 
                 Console.Error.WriteLine("aimbarrack: " + aimBarrack + " skip: " + skip);
             }
@@ -292,6 +292,16 @@ class Player
             }
             if (!barracks.Any())
             {
+                if (mines.Count() >= 2)
+                {
+                    var newaimBarrack = state.Sites
+                        .Where(x => Math.Abs(startX - state.Queen.x) - 20 < x.distXstart && x.distYstart > 200)
+                        .OrderBy(x => x.dist).First();
+                    aimBarrack = newaimBarrack.siteId;
+                    SmartBuild(state, newaimBarrack, "BARRACKS-KNIGHT");
+                    Train();
+                }
+
                 if (state.TouchedSite != -1 && state.TouchedSite != aimBarrack && (state.Sites[state.TouchedSite].IsUnbuilt
                    || (state.Sites[state.TouchedSite].IsPlayers && state.Sites[state.TouchedSite].IsMineWithIncomeLeft)
                     || (!state.Sites[state.TouchedSite].IsTower && state.Sites[state.TouchedSite].IsEnemys))
@@ -724,7 +734,7 @@ class Player
                         moveY = temptower.y + temptower.r + (temptower.param1 > 700 ? 50 : 0);
                     }
 
-                    if (Math.Abs(state.Queen.x - moveX) < 5 && Math.Abs(state.Queen.y - moveY) < 5)
+                    if (DistansTo(moveX,moveY,state.Queen.x,state.Queen.y)<30)
                     {
                         SmartBuild(state,temptower,"TOWER");
                         return;
