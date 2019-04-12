@@ -184,7 +184,7 @@ class Player
                 site.dist = DistansTo(queen.x, queen.y, site.x, site.y);
                 site.distXstart = Math.Abs(startX - site.x);
                 site.distYstart= Math.Abs(startY - site.y);
-                //Console.Error.WriteLine($"id:{site.siteId} dist:{site.dist} owner:{site.owner} type: {site.structureType} param1:{site.param1} maxMine:{site.maxMineSize}");
+                Console.Error.WriteLine($"id:{site.siteId} dist:{site.dist} distX:{site.distXstart} distY:{site.distYstart}");
             }
             SetLeastMines(queen);
             state.Sites = sites.ToList();
@@ -292,14 +292,16 @@ class Player
             }
             if (!barracks.Any())
             {
-                if (mines.Count() >= 2)
+                if (mines.Count() >= 2&&income>3)
                 {
                     var newaimBarrack = state.Sites
-                        .Where(x => Math.Abs(startX - state.Queen.x) - 20 < x.distXstart && x.distYstart > 200)
+                        .Where(x => Math.Abs(startX - state.Queen.x) - 20 < x.distXstart && x.distYstart > 200&&x.IsUnbuilt)
                         .OrderBy(x => x.dist).First();
                     aimBarrack = newaimBarrack.siteId;
+                    Console.Error.WriteLine("Rush: Changing aim barracks to "+newaimBarrack.siteId);
                     SmartBuild(state, newaimBarrack, "BARRACKS-KNIGHT");
                     Train();
+                    return;
                 }
 
                 if (state.TouchedSite != -1 && state.TouchedSite != aimBarrack && (state.Sites[state.TouchedSite].IsUnbuilt
@@ -341,6 +343,18 @@ class Player
                     return;
                 }
 
+                if (state.TouchedSite == aimBarrack && income < 3)
+                {
+                    Console.Error.WriteLine("Rush: Changing first knights because low income");
+                    SmartBuild(state, state.Sites[state.TouchedSite], "MINE");
+                    Train();
+                    aimBarrack = state.Sites.OrderBy(x => x.dist).First(x =>
+                            x.distXstart > state.Sites[state.TouchedSite].distXstart && x.distYstart > 200 &&
+                            !x.IsTower)
+                        .siteId;
+
+                    return;
+                }
                 Console.Error.WriteLine("Rush: Building first knights");
 
                 SmartBuild(state, state.Sites[aimBarrack], "BARRACKS-KNIGHT");
@@ -394,13 +408,21 @@ class Player
             }
 
             if ((state.Sites.Any(x => x.IsEnemys && x.IsKnightBarrack)||state.Queen.health<46) && state.Turn < 50 &&
-                mines.Count() > 1)
+                mines.Count() > 1&&towers.Count<3)
             {
                 if (!towers.Any())
                 {
-                    Console.Error.WriteLine("Rush: Building First Tower");
-                    var firstTower = state.Sites.Where(x =>
-                        x.IsUnbuilt && x.distYstart > state.Sites[aimBarrack].distYstart&&state.Sites.Count(y=>y.IsUnbuilt&&y.distYstart> state.Sites[aimBarrack].distYstart&&y.distXstart<x.distXstart)>2).OrderBy(x=>x.dist).First();
+                    Console.Error.WriteLine("Rush: Building First Tower, aimbarrack:"+aimBarrack);
+                    var firstTowerCandidates = state.Sites.Where(x =>
+                        x.IsUnbuilt && x.distYstart > state.Sites[aimBarrack].distYstart && state.Sites.Count(y =>
+                            y.IsUnbuilt && y.distYstart > state.Sites[aimBarrack].distYstart &&
+                            y.distXstart < x.distXstart) > 1);
+                    foreach (var firstTowerCandidate in firstTowerCandidates)
+                    {
+                        Console.Error.WriteLine($"First tower candidate: id {firstTowerCandidate.siteId}");
+
+                    }
+                    var firstTower = firstTowerCandidates.OrderBy(x=>x.dist).First();
                     SmartBuild(state,firstTower,"TOWER");
                     TrainBest(state, barracks);
                     return;
